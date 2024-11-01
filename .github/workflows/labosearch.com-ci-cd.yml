@@ -41,18 +41,18 @@ jobs:
         run: |
           composer install  # Downloads all PHP dependencies required to run the application
 
-  # # Job 4: Run tests
-  # run_tests:
-  #   runs-on: ubuntu-latest
-  #   needs: install_dependencies  # This job waits for the dependencies to be installed
+  # Job 4: Run tests
+  run_tests:
+    runs-on: ubuntu-latest
+    needs: install_dependencies  # This job waits for the dependencies to be installed
 
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v2  # Checks out the code to ensure access for testing
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2  # Checks out the code to ensure access for testing
 
-  #     - name: Run tests
-  #       run: |
-  #         vendor/bin/phpunit --configuration phpunit.xml  # Runs the PHPUnit tests to ensure code quality
+      - name: Run tests
+        run: |
+          vendor/bin/phpunit --configuration phpunit.xml  # Runs the PHPUnit tests to ensure code quality
 
   # Job 5: Deploy code using FTP to cPanel
   deploy:
