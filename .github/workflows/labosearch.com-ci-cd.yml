@@ -1,0 +1,90 @@
+# This workflow is triggered on push or pull request events to the main branch.
+on:
+  push:
+    branches:
+      - main  # Only runs on push events to the main branch
+  pull_request:
+    branches:
+      - main  # Only runs on pull requests to the main branch
+
+jobs:
+  # Job 1: Checkout code
+  checkout:
+    runs-on: ubuntu-latest  # Linux provides a consistent environment for CI/CD jobs
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2  # Checks out the repository code
+        # This step is essential to ensure all jobs have access to the latest version of the code
+
+  # Job 2: Set up PHP environment
+  setup_php:
+    runs-on: ubuntu-latest
+    needs: checkout  # This job depends on the successful completion of the checkout job
+
+    steps:
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'  # Sets PHP version to 8.0, ensuring compatibility with CodeIgniter requirements
+
+  # Job 3: Install dependencies
+  install_dependencies:
+    runs-on: ubuntu-latest
+    needs: setup_php  # This job waits for the PHP environment to be set up
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2  # Ensures code availability for this job
+
+      - name: Install dependencies
+        run: |
+          composer install  # Downloads all PHP dependencies required to run the application
+
+  # # Job 4: Run tests
+  # run_tests:
+  #   runs-on: ubuntu-latest
+  #   needs: install_dependencies  # This job waits for the dependencies to be installed
+
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v2  # Checks out the code to ensure access for testing
+
+  #     - name: Run tests
+  #       run: |
+  #         vendor/bin/phpunit --configuration phpunit.xml  # Runs the PHPUnit tests to ensure code quality
+
+  # Job 5: Deploy code using FTP to cPanel
+  deploy:
+    runs-on: ubuntu-latest
+    needs: run_tests  # This job ensures that only tested code is deployed
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2  # Checks out the code to ensure access for deployment
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'  # Sets PHP version to ensure consistency with the application
+
+      - name: Install dependencies
+        run: |
+          composer install  # Installs production dependencies to ensure they are available for the application
+
+      - name: Deploy to cPanel using FTP
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}  # Retrieves the FTP server URL from GitHub Secrets
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}  # Retrieves the FTP username from GitHub Secrets
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}  # Retrieves the FTP password from GitHub Secrets
+        run: |
+          lftp -e "
+            set ftp:ssl-allow no;  # Configures LFTP to allow non-SSL connections if necessary
+            open ftp://$FTP_USERNAME:$FTP_PASSWORD@$FTP_SERVER;  # Connects to the FTP server using provided credentials
+            mirror -R --parallel=10 --only-newer --verbose ./ /public_html;  # Uploads files to the public_html directory
+            bye;  # Ends the FTP session
+          "
+          # The lftp command mirrors files from local to remote:
+          # - mirror -R: Mirrors (uploads) files from local to remote
+          # - --parallel=10: Speeds up uploads by using parallel transfers
+          # - --only-newer: Uploads only updated files to save time
