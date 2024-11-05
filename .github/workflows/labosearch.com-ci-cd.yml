@@ -45,13 +45,13 @@ jobs:
           echo "IMAGE_TAG=latest" >> $GITHUB_ENV
 
       - name: Build Docker image
-        run: docker build . --tag YOUR_DOCKER_USERNAME/${{ env.REPO_NAME }}:${{ env.IMAGE_TAG }}
+        run: docker build . --tag quatib9/${{ env.REPO_NAME }}:${{ env.IMAGE_TAG }}
 
       - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u YOUR_DOCKER_USERNAME --password-stdin
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u quatib9 --password-stdin
 
       - name: Push Docker image to Docker Hub
-        run: docker push YOUR_DOCKER_USERNAME/${{ env.REPO_NAME }}:${{ env.IMAGE_TAG }}
+        run: docker push quatib9/${{ env.REPO_NAME }}:${{ env.IMAGE_TAG }}
 
       - name: Deploy to AWS EC2
         uses: appleboy/ssh-action@master
@@ -61,10 +61,10 @@ jobs:
           key: ${{ secrets.SSH_KEY_SECRET }}
           script: |
             sudo systemctl start docker
-            sudo docker pull YOUR_DOCKER_USERNAME/${{ env.REPO_NAME }}:${{ env.IMAGE_TAG }}
+            sudo docker pull quatib9/${{ env.REPO_NAME }}:${{ env.IMAGE_TAG }}
             sudo docker stop my-container || true  # Stop existing container if it exists
             sudo docker rm my-container || true    # Remove existing container if it exists
-            sudo docker run -d --name my-container -p 80:80 YOUR_DOCKER_USERNAME/${{ env.REPO_NAME }}:${{ env.IMAGE_TAG }}
+            sudo docker run -d --name my-container -p 80:80 quatib9/${{ env.REPO_NAME }}:${{ env.IMAGE_TAG }}
             
       - name: Notify deployment success
         run: echo "Deployment to AWS EC2 successful."
